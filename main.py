@@ -14,7 +14,8 @@ import os
 year = datetime.now().strftime("%Y")
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', '8BYkEfBA6O6donzWlSihBXox7C0sKR6b')
+app.config['SECRET_KEY'] = os.environ.get(
+    'SECRET_KEY', '8BYkEfBA6O6donzWlSihBXox7C0sKR6b')
 ckeditor = CKEditor(app)
 Bootstrap(app)
 login_manager = LoginManager()
@@ -31,13 +32,14 @@ gravatar = Gravatar(app,
                     use_ssl=False,
                     base_url=None)
 
-##CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///blog.db')
+# CONNECT TO DB
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    'DATABASE_URL', 'sqlite:///blog.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-##CONFIGURE TABLES
+# CONFIGURE TABLES
 
 
 class User(UserMixin, db.Model):
@@ -66,7 +68,8 @@ class BlogPost(db.Model):
 class Comment(db.Model):
     __tablename__ = 'comments'
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    blogpost_id = db.Column(db.Integer, db.ForeignKey('blog_posts.id'), nullable=False)
+    blogpost_id = db.Column(db.Integer, db.ForeignKey(
+        'blog_posts.id'), nullable=False)
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.Text, nullable=False)
 
@@ -78,11 +81,11 @@ db.create_all()
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
 @app.route('/')
 def get_all_posts():
     posts = BlogPost.query.all()
     return render_template("index.html", all_posts=posts, year=year)
-
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -90,12 +93,14 @@ def register():
     register_form = RegisterForm()
     if register_form.validate_on_submit():
         if User.query.filter_by(email=register_form.email.data).first():
-            flash('This email already exists in our database.Please login to access your account')
+            flash(
+                'This email already exists in our database.Please login to access your account')
             return redirect('login')
         new_user = User(
             name=register_form.name.data,
             email=register_form.email.data,
-            password=generate_password_hash(register_form.password.data, method="pbkdf2:sha256", salt_length=8)
+            password=generate_password_hash(
+                register_form.password.data, method="pbkdf2:sha256", salt_length=8)
         )
         db.session.add(new_user)
         db.session.commit()
@@ -110,11 +115,13 @@ def login():
     if login_form.validate_on_submit():
         user = User.query.filter_by(email=login_form.email.data).first()
         if not user:
-            flash('We did not find this email in our database. Please register to create your private account')
+            flash(
+                'We did not find this email in our database. Please register to create your private account')
             return redirect(url_for('register'))
         if user:
             if not check_password_hash(user.password, login_form.password.data):
-                flash('You have entered an incorrect password.Please login with your correct credentials')
+                flash(
+                    'You have entered an incorrect password.Please login with your correct credentials')
                 return redirect(url_for('login'))
             else:
                 login_user(user)
@@ -165,14 +172,14 @@ def contact():
     return render_template("contact.html", year=year)
 
 
-#Create admin-only decorator
+# Create admin-only decorator
 def admin_only(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        #If id is not 1 then return abort with 403 error
+        # If id is not 1 then return abort with 403 error
         if current_user.id != 1:
             return abort(403)
-        #Otherwise continue with the route function
+        # Otherwise continue with the route function
         return f(*args, **kwargs)
     return decorated_function
 
